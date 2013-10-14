@@ -6,70 +6,118 @@ import android.graphics.Color;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.ScrollView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 public class MainActivity extends Activity {
-
-	java.net.Socket s = new java.net.Socket();
-	ScrollView svButtons;
-	ListView lvButtons;
+		
+	LinearLayout llvert;
+	int _id = 1;
+	java.net.Socket _s;
+	int _AddressId = 0;
+	int _PortId = 0;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);		
-		svButtons = new ScrollView(this);
-		svButtons.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,LinearLayout.LayoutParams.FILL_PARENT));
-		lvButtons = new ListView(this);
-		lvButtons.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,LinearLayout.LayoutParams.FILL_PARENT));
-		svButtons.addView(lvButtons);
-		if(!s.isConnected()){
-			java.net.InetSocketAddress address = new java.net.InetSocketAddress("10.5.0.9", 9876);
-			try{
-				s.connect(address);
-			}catch(Exception ex){
-				Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
-			}		
-		}
-		MakeButtonPanel();
+		llvert = new LinearLayout(this);
+		llvert.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT));
+		llvert.setId(_id++);
+		llvert.setBackgroundColor(Color.BLACK);
+		MakeConnectPanel();
 		
-		this.setContentView(svButtons);
+		this.setContentView(llvert);
+	}
+	
+	private void MakeConnection(String ip, String port){
+		java.net.InetSocketAddress address = new java.net.InetSocketAddress(ip, Integer.parseInt(port));
+		try{				
+			_s = new java.net.Socket();
+			_s.connect(address,3000);
+		}catch(Exception ex){
+			Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
+		}
+	}
+	
+	private void MakeConnectPanel(){
+		EditText etPort = new EditText(this);
+		EditText etAddress = new EditText(this);
+		Button bConnect = new Button(this);
+		RelativeLayout rl = new RelativeLayout(this);
+		rl.setId(_id++);
+		rl.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT));
+		etAddress.setWidth(150);
+		etAddress.setText("Address");
+		etAddress.setId(_id++);
+		_AddressId = etAddress.getId();
+
+		rl.addView(etAddress);
+		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
+		lp.addRule(RelativeLayout.RIGHT_OF, (_id-1));
+		etPort.setWidth(80);
+		etPort.setText("Port");
+		etPort.setId(_id++);
+		_PortId = etPort.getId();
+		
+		rl.addView(etPort,lp);
+		lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
+		lp.addRule(RelativeLayout.BELOW, (_id-2));
+		bConnect.setId(_id++);
+		bConnect.setText("Connect");
+		rl.addView(bConnect,lp);
+		
+		bConnect.setOnClickListener(new View.OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				MakeConnection(((EditText)((View)v.getParent()).findViewById(_AddressId)).getText().toString(),((EditText)((View)v.getParent()).findViewById(_PortId)).getText().toString());
+				llvert.removeAllViews();
+				MakeButtonPanel();
+				setContentView(llvert);
+			}
+		});
+		llvert.addView(rl);
 	}
 	
 	private void MakeButtonPanel(){
-		LinearLayout ll = new LinearLayout(this);
-		ll.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT));				
-		lvButtons.addView(ll);
-		for(int i=0; i<10; i++){
-			if(i%8 == 0 && i > 0){
-				ll = new LinearLayout(this);
-				ll.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.FILL_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT));				
-				lvButtons.addView(ll);
-			}
-			ll.addView(MakeButton(String.valueOf(i)));
-		}
+		RelativeLayout rl = new RelativeLayout(this);
+		rl.setId(_id++);
+		rl.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT));
+		
+		rl.addView(MakeButton("<--"));
+		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
+		lp.addRule(RelativeLayout.RIGHT_OF, (_id-1));
+		rl.addView(MakeButton("-->"), lp);
+		lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
+		lp.addRule(RelativeLayout.RIGHT_OF, (_id-1));
+		rl.addView(MakeButton("ESC"), lp);
+		lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
+		lp.addRule(RelativeLayout.RIGHT_OF, (_id-1));
+		rl.addView(MakeButton("EXIT"), lp);
+		
+		llvert.addView(rl);
 	}
 	
 	private Button MakeButton(String sText){
 		Button b = new Button(this);
+		b.setId(_id++);
 		b.setText(sText);
 		
 		int width = this.getWindowManager().getDefaultDisplay().getWidth();
 		int height = this.getWindowManager().getDefaultDisplay().getHeight();
 		
-		b.setWidth(width>>3);
-		b.setHeight(height>>3);
+		b.setWidth(width>>2);
+		b.setHeight(height>>2);
 		
-		b.setTextColor(Color.WHITE);
-		b.setBackgroundColor(Color.BLACK);
+		b.setTextSize(b.getWidth()>>1);
 		b.setOnClickListener(new View.OnClickListener() {
 			
 			@Override
 			public void onClick(View v) {
 				Button thisButton = (Button)v;
 				int iCode = Protocol(thisButton.getText().toString());
-				try{					
+				try{
 					byte[] buffer = new byte[5];
 					buffer[0] = 3;
 					buffer[1] = (byte)(iCode>>24);
@@ -77,8 +125,8 @@ public class MainActivity extends Activity {
 					buffer[3] = (byte)(iCode>>8);
 					buffer[4] = (byte)(iCode);
 					
-					s.getOutputStream().write(buffer);
-					s.getOutputStream().flush();
+					_s.getOutputStream().write(buffer);
+					_s.getOutputStream().flush();
 				}
 				catch(Exception ex){					
 				}				
@@ -90,6 +138,7 @@ public class MainActivity extends Activity {
 	private int Protocol(String s){
 		int iReturn = 0;
 		
+		if(s.equalsIgnoreCase("EXIT")) iReturn = -1;
 		if(s.equalsIgnoreCase("0")) iReturn = 0;
 		if(s.equalsIgnoreCase("1")) iReturn = 1;
 		if(s.equalsIgnoreCase("2")) iReturn = 2;
@@ -125,6 +174,8 @@ public class MainActivity extends Activity {
 		if(s.equalsIgnoreCase("F22")) iReturn = 32;
 		if(s.equalsIgnoreCase("F23")) iReturn = 33;
 		if(s.equalsIgnoreCase("F24")) iReturn = 34;
+		if(s.equalsIgnoreCase("<--")) iReturn = 35;
+		if(s.equalsIgnoreCase("-->")) iReturn = 36;
 		
 		return iReturn;
 	}
