@@ -3,7 +3,9 @@ package com.web.minimalistsremotecontrol;
 import android.os.Bundle;
 import android.app.Activity;
 import android.graphics.Color;
+import android.text.InputType;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -48,7 +50,8 @@ public class MainActivity extends Activity {
 		rl.setId(_id++);
 		rl.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT));
 		etAddress.setWidth(150);
-		etAddress.setText("Address");
+		etAddress.setHint("Ip Address");
+		etAddress.setInputType(InputType.TYPE_CLASS_TEXT);
 		etAddress.setId(_id++);
 		_AddressId = etAddress.getId();
 
@@ -56,7 +59,8 @@ public class MainActivity extends Activity {
 		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
 		lp.addRule(RelativeLayout.RIGHT_OF, (_id-1));
 		etPort.setWidth(80);
-		etPort.setText("Port");
+		etPort.setHint("Port");
+		etPort.setInputType(InputType.TYPE_CLASS_NUMBER);
 		etPort.setId(_id++);
 		_PortId = etPort.getId();
 		
@@ -120,6 +124,7 @@ public class MainActivity extends Activity {
 				try{
 					byte[] buffer = new byte[5];
 					buffer[0] = 3;
+					if(iCode == -1) buffer[0] = -1;
 					buffer[1] = (byte)(iCode>>24);
 					buffer[2] = (byte)(iCode>>16);
 					buffer[3] = (byte)(iCode>>8);
@@ -182,9 +187,30 @@ public class MainActivity extends Activity {
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
+		menu.add("Connect");
+		menu.add("Actions");
 		return true;
 	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		if(item.getTitle().toString().toLowerCase().equals("connect")){
+			llvert.removeAllViews();
+			try{
+				this._s.close();
+			}catch(Exception ex){
+				Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
+			}
+			this.MakeConnectPanel();
+		}
+		
+		if(item.getTitle().toString().toLowerCase().equals("actions")){
+			llvert.removeAllViews();
+			this.MakeButtonPanel();
+		}
+		return super.onOptionsItemSelected(item);
+	}
+	
+	
 
 }
