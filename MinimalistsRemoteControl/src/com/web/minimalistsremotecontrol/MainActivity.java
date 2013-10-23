@@ -2,6 +2,7 @@ package com.web.minimalistsremotecontrol;
 
 import android.os.Bundle;
 import android.app.Activity;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.text.InputType;
 import android.view.Menu;
@@ -22,7 +23,8 @@ public class MainActivity extends Activity {
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);		
+		super.onCreate(savedInstanceState);
+		this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		llvert = new LinearLayout(this);
 		llvert.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT,LinearLayout.LayoutParams.WRAP_CONTENT));
 		llvert.setId(_id++);
@@ -43,6 +45,7 @@ public class MainActivity extends Activity {
 	}
 	
 	private void MakeConnectPanel(){
+		llvert.removeAllViews();
 		EditText etPort = new EditText(this);
 		EditText etAddress = new EditText(this);
 		Button bConnect = new Button(this);
@@ -75,6 +78,7 @@ public class MainActivity extends Activity {
 			
 			@Override
 			public void onClick(View v) {
+				if(((EditText)((View)v.getParent()).findViewById(_AddressId)).getText().toString().equals("") || ((EditText)((View)v.getParent()).findViewById(_PortId)).getText().toString().equals("")) return;
 				MakeConnection(((EditText)((View)v.getParent()).findViewById(_AddressId)).getText().toString(),((EditText)((View)v.getParent()).findViewById(_PortId)).getText().toString());
 				llvert.removeAllViews();
 				MakeButtonPanel();
@@ -85,6 +89,7 @@ public class MainActivity extends Activity {
 	}
 	
 	private void MakeButtonPanel(){
+		llvert.removeAllViews();
 		RelativeLayout rl = new RelativeLayout(this);
 		rl.setId(_id++);
 		rl.setLayoutParams(new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.MATCH_PARENT));
@@ -93,12 +98,20 @@ public class MainActivity extends Activity {
 		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
 		lp.addRule(RelativeLayout.RIGHT_OF, (_id-1));
 		rl.addView(MakeButton("-->"), lp);
+		
 		lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
-		lp.addRule(RelativeLayout.RIGHT_OF, (_id-1));
+		lp.addRule(RelativeLayout.BELOW, (_id-2));
+		rl.addView(MakeButton("F5"), lp);
+		
+		lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
+		lp.addRule(RelativeLayout.BELOW, (_id-2));
+		lp.addRule(RelativeLayout.RIGHT_OF,(_id-1));
 		rl.addView(MakeButton("ESC"), lp);
+		
 		lp = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);		
-		lp.addRule(RelativeLayout.RIGHT_OF, (_id-1));
+		lp.addRule(RelativeLayout.BELOW, (_id-2));
 		rl.addView(MakeButton("EXIT"), lp);
+		
 		
 		llvert.addView(rl);
 	}
@@ -111,7 +124,7 @@ public class MainActivity extends Activity {
 		int width = this.getWindowManager().getDefaultDisplay().getWidth();
 		int height = this.getWindowManager().getDefaultDisplay().getHeight();
 		
-		b.setWidth(width>>2);
+		b.setWidth(width>>1);
 		b.setHeight(height>>2);
 		
 		b.setTextSize(b.getWidth()>>1);
@@ -120,11 +133,19 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v) {
 				Button thisButton = (Button)v;
+				if(thisButton.getText().toString().equals("EXIT")){
+					try{
+						closeSocket();
+						MakeConnectPanel();
+						return;
+					}catch(Exception ex){
+						Toast.makeText(getBaseContext(),ex.toString(), Toast.LENGTH_LONG).show();
+					}
+				}
 				int iCode = Protocol(thisButton.getText().toString());
 				try{
 					byte[] buffer = new byte[5];
 					buffer[0] = 3;
-					if(iCode == -1) buffer[0] = -1;
 					buffer[1] = (byte)(iCode>>24);
 					buffer[2] = (byte)(iCode>>16);
 					buffer[3] = (byte)(iCode>>8);
@@ -133,7 +154,8 @@ public class MainActivity extends Activity {
 					_s.getOutputStream().write(buffer);
 					_s.getOutputStream().flush();
 				}
-				catch(Exception ex){					
+				catch(Exception ex){	
+					Toast.makeText(getBaseContext(),ex.toString(), Toast.LENGTH_LONG).show();
 				}				
 			}
 		});
@@ -143,7 +165,6 @@ public class MainActivity extends Activity {
 	private int Protocol(String s){
 		int iReturn = 0;
 		
-		if(s.equalsIgnoreCase("EXIT")) iReturn = -1;
 		if(s.equalsIgnoreCase("0")) iReturn = 0;
 		if(s.equalsIgnoreCase("1")) iReturn = 1;
 		if(s.equalsIgnoreCase("2")) iReturn = 2;
@@ -191,13 +212,30 @@ public class MainActivity extends Activity {
 		menu.add("Actions");
 		return true;
 	}
+	
+	private void closeSocket(){
+		try{
+			if(this._s != null){
+				this._s.getOutputStream().write(-1);
+				this._s.shutdownOutput();
+				this._s.close();
+			}
+		}catch(Exception ex){
+			Toast.makeText(getBaseContext(), ex.toString(), Toast.LENGTH_LONG).show();
+		}
+	}
+
+	@Override
+	public void onBackPressed() {
+		closeSocket();
+		super.onBackPressed();
+	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if(item.getTitle().toString().toLowerCase().equals("connect")){
-			llvert.removeAllViews();
 			try{
-				this._s.close();
+				closeSocket();
 			}catch(Exception ex){
 				Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
 			}
@@ -205,7 +243,6 @@ public class MainActivity extends Activity {
 		}
 		
 		if(item.getTitle().toString().toLowerCase().equals("actions")){
-			llvert.removeAllViews();
 			this.MakeButtonPanel();
 		}
 		return super.onOptionsItemSelected(item);
